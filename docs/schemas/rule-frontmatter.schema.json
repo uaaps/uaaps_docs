@@ -1,0 +1,27 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://uaaps.github.io/uaaps_docs/schemas/rule-frontmatter.schema.json",
+  "title": "UAAPS RULE.md Frontmatter",
+  "description": "Schema for the YAML frontmatter block in rules/<name>/RULE.md files.",
+  "type": "object",
+  "required": ["description"],
+  "additionalProperties": false,
+  "properties": {
+    "description": {
+      "description": "Purpose of this rule. Used by agents for auto-selection. Be specific about what coding standards or conventions this rule enforces.",
+      "type": "string"
+    },
+    "globs": {
+      "description": "Glob pattern(s) for automatic attachment. The rule is injected into context whenever a matching file is opened or edited. Example: 'src/**/*.{ts,tsx}'.",
+      "oneOf": [
+        { "type": "string" },
+        { "type": "array", "items": { "type": "string" } }
+      ]
+    },
+    "alwaysApply": {
+      "description": "When true, the rule is always included in context regardless of the files being worked on. Default: false.",
+      "type": "boolean",
+      "default": false
+    }
+  }
+}

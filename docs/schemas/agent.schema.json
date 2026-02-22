@@ -1,0 +1,70 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://uaaps.github.io/uaaps_docs/schemas/agent.schema.json",
+  "title": "UAAPS Agent Definition",
+  "description": "Schema for agents/<name>/agent.yaml — structured definition of a specialized agent persona.",
+  "type": "object",
+  "required": ["name", "description", "system_prompt"],
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "description": "Agent identifier. [a-z0-9-], max 64 chars.",
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{0,63}$"
+    },
+    "description": {
+      "description": "Role summary used for automatic agent selection. Keep concise.",
+      "type": "string",
+      "maxLength": 1024
+    },
+    "version": {
+      "description": "Agent version following Semantic Versioning.",
+      "type": "string",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-[0-9A-Za-z-.]+)?(?:\\+[0-9A-Za-z-.]+)?$"
+    },
+    "system_prompt": {
+      "description": "Relative path to the system-prompt.md file within the agent directory.",
+      "type": "string",
+      "pattern": ".*\\.md$"
+    },
+    "skills": {
+      "description": "Skills this agent activates. Reference by skill name (within this package) or 'package:skill' for cross-package references.",
+      "type": "array",
+      "items": { "type": "string" },
+      "uniqueItems": true
+    },
+    "commands": {
+      "description": "Commands (including parameterized templates) this agent uses. Reference by command name.",
+      "type": "array",
+      "items": { "type": "string" },
+      "uniqueItems": true
+    },
+    "tools": {
+      "description": "Tool whitelist (platform-dependent). Restricts the agent to only these tools.",
+      "type": "array",
+      "items": { "type": "string" },
+      "uniqueItems": true
+    },
+    "parameters": {
+      "description": "Behavioral parameters passed to the model. Keys and valid values are platform-dependent.",
+      "type": "object",
+      "properties": {
+        "temperature": {
+          "description": "Sampling temperature (0.0–2.0).",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 2
+        },
+        "style": {
+          "description": "Response style hint (e.g. 'professional', 'concise', 'verbose').",
+          "type": "string"
+        },
+        "output_format": {
+          "description": "Preferred output format hint (e.g. 'markdown', 'json', 'plain').",
+          "type": "string"
+        }
+      },
+      "additionalProperties": true
+    }
+  }
+}

@@ -1,0 +1,75 @@
+site_name: UAAPS — Universal Agentic Artifact Package Specification
+site_description: An open standard for portable AI agent artifact packages
+site_url: https://uaaps.github.io/uaaps_docs/
+repo_url: https://github.com/uaaps/uaaps_docs
+repo_name: uaaps/uaaps_docs
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - toc.integrate
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.code.annotate
+
+markdown_extensions:
+  - admonition
+  - tables
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets:
+      base_path: ['docs']
+  - pymdownx.tabbed:
+      alternate_style: true
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Specification:
+    - Introduction: spec/00-introduction.md
+    - Package Format: spec/01-package-format.md
+    - Package Manifest: spec/02-manifest.md
+    - Skills: spec/03-skills.md
+    - Commands & Prompts: spec/04-commands.md
+    - Agents: spec/05-agents.md
+    - Rules: spec/06-rules.md
+    - Hooks: spec/07-hooks.md
+    - MCP Servers: spec/08-mcp.md
+    - Compatibility Matrix: spec/09-compatibility.md
+    - Migration Guides: spec/10-migration.md
+    - Packaging & Distribution: spec/11-packaging.md
+    - Dependency Resolution: spec/12-dependencies.md
+    - Signing & Verification: spec/13-signing.md
+    - Governance: spec/14-governance.md
+    - Validation Rules: spec/15-validation.md
+    - Security: spec/16-security.md
+    - Glossary: spec/17-glossary.md
+    - Appendix: spec/appendix.md
+    - Full Specification: spec/full.md
+  - Guides:
+    - Implementers Guide: guides/implementers.md
+  - Schemas: schemas/README.md
+  - Changelog: changelog.md

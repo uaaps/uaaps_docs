@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://uaaps.github.io/uaaps_docs/schemas/system-prompt-frontmatter.schema.json",
+  "title": "UAAPS System Prompt Frontmatter",
+  "description": "Schema for the YAML frontmatter block in agents/<name>/system-prompt.md files.",
+  "type": "object",
+  "required": ["description"],
+  "additionalProperties": false,
+  "properties": {
+    "description": {
+      "description": "Short description of the agent's role and expertise. Used for automatic selection.",
+      "type": "string",
+      "maxLength": 1024
+    },
+    "capabilities": {
+      "description": "List of specific capabilities or domains this agent is expert in.",
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1
+    }
+  }
+}
