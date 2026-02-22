@@ -1,0 +1,69 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://uaaps.github.io/uaaps_docs/schemas/skill-frontmatter.schema.json",
+  "title": "UAAPS SKILL.md Frontmatter",
+  "description": "Schema for the YAML frontmatter block (between --- delimiters) in skills/<name>/SKILL.md files.",
+  "type": "object",
+  "required": ["name", "description"],
+  "additionalProperties": true,
+  "properties": {
+    "name": {
+      "description": "Skill identifier. [a-z0-9-], max 64 chars. Used for namespaced references (package:skill-name).",
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{0,63}$"
+    },
+    "description": {
+      "description": "What the skill does and WHEN to invoke it. Max 1024 chars. This is loaded at metadata phase (phase 1) — make it precise.",
+      "type": "string",
+      "maxLength": 1024
+    },
+    "license": {
+      "description": "SPDX license identifier or path to license file.",
+      "type": "string"
+    },
+    "compatibility": {
+      "description": "Runtime and dependency requirements for this skill.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "requires": {
+          "description": "Required packages or runtimes (e.g. 'python>=3.10', 'pypdf').",
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "optional": {
+          "description": "Optional packages for enhanced behavior (graceful degradation if absent).",
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "packages": {
+          "description": "Cross-skill dependencies (e.g. 'code-review/git-utils').",
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "metadata": {
+      "description": "Arbitrary extension key-value pairs. All values must be strings.",
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    },
+    "allowed-tools": {
+      "description": "Space-delimited list of pre-approved tools (experimental). Example: 'Read Grep Glob Bash'.",
+      "type": "string"
+    },
+    "context": {
+      "description": "Claude Code: execution context isolation.",
+      "type": "string",
+      "enum": ["fork"]
+    },
+    "agent": {
+      "description": "Claude Code: sub-agent config name to run this skill in.",
+      "type": "string"
+    },
+    "disable-model-invocation": {
+      "description": "Claude Code: when true, skill is only invoked by user explicitly, not by the model.",
+      "type": "boolean"
+    }
+  }
+}

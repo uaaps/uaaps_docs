@@ -1,0 +1,257 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://uaaps.github.io/uaaps_docs/schemas/package-manifest.schema.json",
+  "title": "UAAPS Package Manifest",
+  "description": "Schema for package.agent.json (and package.agent.yaml) — the single required file in every UAAPS package.",
+  "type": "object",
+  "required": ["name", "version"],
+  "additionalProperties": false,
+  "patternProperties": {
+    "^x-": {
+      "description": "Vendor extension field. Any additional properties prefixed with 'x-' are allowed.",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "name": {
+      "description": "Package name. Either a plain name [a-z0-9-] (max 64 chars) or a scoped name @scope/name (max 130 chars total).",
+      "type": "string",
+      "pattern": "^(@[a-z0-9][a-z0-9_-]{0,63}/)?[a-z0-9][a-z0-9-]{0,63}$",
+      "maxLength": 130
+    },
+    "version": {
+      "description": "Package version following Semantic Versioning 2.0.",
+      "type": "string",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$"
+    },
+    "description": {
+      "description": "Short human-readable description. Max 1024 chars.",
+      "type": "string",
+      "maxLength": 1024
+    },
+    "author": {
+      "description": "Author name or organization identifier.",
+      "type": "string"
+    },
+    "license": {
+      "description": "SPDX license identifier or filename (e.g. 'Apache-2.0', 'LICENSE').",
+      "type": "string"
+    },
+    "repository": {
+      "description": "URL to the source code repository.",
+      "type": "string",
+      "format": "uri"
+    },
+    "homepage": {
+      "description": "URL to the project homepage or documentation.",
+      "type": "string",
+      "format": "uri"
+    },
+    "category": {
+      "description": "Marketplace category for discovery.",
+      "type": "string"
+    },
+    "keywords": {
+      "description": "Discovery tags for registry search.",
+      "type": "array",
+      "items": { "type": "string" },
+      "uniqueItems": true
+    },
+    "engines": {
+      "description": "Minimum platform version requirements.",
+      "type": "object",
+      "properties": {
+        "claude-code": { "type": "string" },
+        "cursor":      { "type": "string" },
+        "copilot":     { "type": "string" },
+        "codex":       { "type": "string" }
+      },
+      "additionalProperties": { "type": "string" }
+    },
+    "artifacts": {
+      "description": "Explicit artifact registry. Optional; artifacts are auto-discovered if omitted.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "skills": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/artifactEntry" }
+        },
+        "agents": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/artifactEntry" }
+        },
+        "commands": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/artifactEntry" }
+        }
+      }
+    },
+    "dependencies": {
+      "description": "Other UAAPS packages required. Keys are package names, values are SemVer ranges.",
+      "$ref": "#/definitions/dependencyMap"
+    },
+    "optionalDependencies": {
+      "description": "Optional packages — install succeeds even if these are absent.",
+      "$ref": "#/definitions/dependencyMap"
+    },
+    "peerDependencies": {
+      "description": "Packages that must be provided by the host environment. Not auto-installed.",
+      "$ref": "#/definitions/dependencyMap"
+    },
+    "resolutions": {
+      "description": "Force specific versions for transitive dependencies to resolve conflicts.",
+      "$ref": "#/definitions/dependencyMap"
+    },
+    "systemDependencies": {
+      "description": "OS-level and runtime requirements. Verified via pre-flight checks; not auto-installed (except pip/npm with --install-system-deps).",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "python": {
+          "description": "Required Python version (SemVer range, e.g. '>=3.10').",
+          "type": "string"
+        },
+        "node": {
+          "description": "Required Node.js version (SemVer range, e.g. '>=18').",
+          "type": "string"
+        },
+        "packages": {
+          "description": "Packages to install via package managers.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "pip":   { "type": "array", "items": { "type": "string" } },
+            "npm":   { "type": "array", "items": { "type": "string" } },
+            "brew":  { "type": "array", "items": { "type": "string" } },
+            "apt":   { "type": "array", "items": { "type": "string" } },
+            "cargo": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        "binaries": {
+          "description": "Executables that must exist on $PATH.",
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "mcp-servers": {
+          "description": "MCP server names that must be available.",
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "env": {
+      "description": "Environment variables required by this package.",
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["description"],
+        "additionalProperties": false,
+        "properties": {
+          "description": { "type": "string" },
+          "required":    { "type": "boolean" },
+          "default":     { "type": "string" }
+        }
+      }
+    },
+    "permissions": {
+      "description": "Declared capability scopes. Host platforms should enforce these.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "fs": {
+          "description": "Filesystem access scopes.",
+          "type": "array",
+          "items": { "type": "string", "enum": ["read", "write"] }
+        },
+        "network": {
+          "description": "Allowed network hosts (exact host or glob pattern).",
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "shell": {
+          "description": "Whether arbitrary shell execution is allowed.",
+          "type": "boolean"
+        }
+      }
+    },
+    "quality": {
+      "description": "Tests and evals definitions.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "tests": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "command"],
+            "additionalProperties": false,
+            "properties": {
+              "name":        { "type": "string" },
+              "command":     { "type": "string" },
+              "description": { "type": "string" }
+            }
+          }
+        },
+        "evals": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "path"],
+            "additionalProperties": false,
+            "properties": {
+              "name":        { "type": "string" },
+              "path":        { "type": "string" },
+              "description": { "type": "string" },
+              "metrics": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["name", "type"],
+                  "properties": {
+                    "name": { "type": "string" },
+                    "type": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "skills":   { "description": "Override path to skills directory.", "type": "string" },
+    "commands": { "description": "Override path to commands directory.", "type": "string" },
+    "agents":   { "description": "Override path to agents directory.", "type": "string" },
+    "rules":    { "description": "Override path to rules directory.", "type": "string" },
+    "hooks":    { "description": "Override path to hooks.json.", "type": "string" },
+    "mcp":      { "description": "Override path to MCP servers.json.", "type": "string" },
+    "dist-tags": {
+      "description": "Named aliases for specific package versions (e.g. 'stable', 'bank-approved').",
+      "$ref": "#/definitions/dependencyMap"
+    },
+    "x-claude": {
+      "description": "Claude Code vendor extension fields.",
+      "type": "object"
+    },
+    "x-cursor": {
+      "description": "Cursor vendor extension fields.",
+      "type": "object"
+    }
+  },
+  "definitions": {
+    "artifactEntry": {
+      "type": "object",
+      "required": ["name", "path"],
+      "additionalProperties": false,
+      "properties": {
+        "name":        { "type": "string" },
+        "path":        { "type": "string" },
+        "description": { "type": "string", "maxLength": 1024 }
+      }
+    },
+    "dependencyMap": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    }
+  }
+}

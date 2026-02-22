@@ -1,0 +1,46 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://uaaps.github.io/uaaps_docs/schemas/mcp-servers.schema.json",
+  "title": "UAAPS MCP Servers Configuration",
+  "description": "Schema for mcp/servers.json — declares Model Context Protocol servers that extend agent capabilities.",
+  "type": "object",
+  "required": ["servers"],
+  "additionalProperties": false,
+  "properties": {
+    "servers": {
+      "description": "Map of logical server name → server launch configuration.",
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "$ref": "#/definitions/serverEntry"
+      }
+    }
+  },
+  "definitions": {
+    "serverEntry": {
+      "type": "object",
+      "required": ["command"],
+      "additionalProperties": false,
+      "properties": {
+        "command": {
+          "description": "Executable to launch the MCP server (e.g. 'node', 'python', 'uv').",
+          "type": "string"
+        },
+        "args": {
+          "description": "Command-line arguments appended to the command. Use ${PACKAGE_ROOT} to reference the package root directory.",
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "env": {
+          "description": "Environment variables injected into the server process. Reference secrets as '${VAR_NAME}'.",
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        },
+        "cwd": {
+          "description": "Working directory for the server process. Defaults to the package root.",
+          "type": "string"
+        }
+      }
+    }
+  }
+}

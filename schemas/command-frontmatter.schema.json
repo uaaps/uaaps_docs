@@ -1,0 +1,59 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://uaaps.github.io/uaaps_docs/schemas/command-frontmatter.schema.json",
+  "title": "UAAPS Command Frontmatter",
+  "description": "Schema for the YAML frontmatter block in commands/<name>.md files. Commands are user-invoked via /command-name and can also serve as reusable parameterized templates with {{variable}} interpolation.",
+  "type": "object",
+  "required": ["name"],
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "description": "Command identifier. [a-z0-9-], max 64 chars. Used for /name invocation and referenced by agents and skills.",
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{0,63}$"
+    },
+    "description": {
+      "description": "Short description shown in command listings and help menus.",
+      "type": "string",
+      "maxLength": 1024
+    },
+    "variables": {
+      "description": "Template variables available via {{variable_name}} interpolation in the command body.",
+      "type": "array",
+      "items": { "$ref": "#/definitions/variable" }
+    }
+  },
+  "definitions": {
+    "variable": {
+      "type": "object",
+      "required": ["name"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "description": "Variable identifier used in {{name}} interpolation.",
+          "type": "string",
+          "pattern": "^[a-z0-9_][a-z0-9_-]*$"
+        },
+        "description": {
+          "description": "Human-readable description of what this variable represents.",
+          "type": "string"
+        },
+        "required": {
+          "description": "Whether this variable must be provided at invocation. Default: false.",
+          "type": "boolean",
+          "default": false
+        },
+        "enum": {
+          "description": "Allowed values for this variable. If set, only these values are accepted.",
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1
+        },
+        "default": {
+          "description": "Default value used when the variable is not provided.",
+          "type": "string"
+        }
+      }
+    }
+  }
+}
