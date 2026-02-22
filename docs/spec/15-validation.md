@@ -17,3 +17,37 @@
 | Lock file integrity | Hash MUST match on `--frozen` install |
 | Namespace uniqueness | No two skills with same `name` within a single package |
 | Resolution overrides | `resolutions` entries MUST reference packages in the tree |
+
+### Permissions Security Audit
+
+The following conditions do not fail validation but MUST produce a `WARN`-level diagnostic during both `aam validate` and `aam install`. They indicate a package that may be unintentionally over-privileged.
+
+| Condition | Warning message |
+|-----------|----------------|
+| `permissions` field absent | `⚠ No permissions declared — platform-default restrictions apply. Consider adding a permissions field for explicit least-privilege.` |
+| `shell.allow: true` and `binaries` is empty or absent | `⚠ Shell access is unrestricted. Add a binaries allow-list to limit which executables may be invoked.` |
+| `fs.write` contains `**` or `.` | `⚠ Filesystem write scope is very broad. Narrow the write globs to only the output paths the package requires.` |
+| `network.hosts` contains `*` (bare wildcard) | `⚠ Network host wildcard allows any host. Specify explicit hosts or scoped wildcards (e.g. *.example.com).` |
+| `network.schemes` contains `http` | `⚠ Plain HTTP is declared as an allowed network scheme. Prefer https unless the target endpoint requires it.` |
+
+These warnings MUST be displayed to the user and MUST be included in the output of `aam validate --json` under a `warnings` array. They MUST NOT block installation or publication.
+
+### Vendor Extension Validation
+
+The following rules apply to all `x-*` keys in `package.agent.json`:
+
+| Rule | Constraint |
+|------|-----------|
+| Key naming | MUST match `x-[a-z0-9-]+`, vendor-id max 32 chars |
+| Value type | MUST be a JSON object — scalars and arrays are errors |
+| Unknown keys | Tools MUST silently ignore unrecognised `x-*` keys |
+| Count | `aam validate` MUST warn if more than 5 `x-*` keys are declared |
+| Unregistered vendor-id | Registry SHOULD produce a `WARN`; tools MUST NOT error |
+
+The following conditions do not block validation but MUST produce a `WARN`-level diagnostic:
+
+| Condition | Warning message |
+|-----------|----------------|
+| More than 5 `x-*` keys | `⚠ More than 5 vendor extension keys declared. Consider consolidating metadata — extension sprawl can reduce manifest readability.` |
+| `x-*` key vendor-id not in registered platform list | `⚠ Vendor-id "<vendor-id>" is not a registered platform. This key will not be indexed by the registry.` |
+| `x-*` value is not an object | `✕ Vendor extension "x-<vendor-id>" value MUST be a JSON object. Scalar and array values are invalid.` (this condition is an **error**, not a warning) |

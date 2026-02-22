@@ -42,7 +42,7 @@ After resolution, the solver writes a deterministic **lock file** pinning exact 
     },
     "testing-utils": {
       "version": "2.4.0",
-      "source": "npm:@agentpkg/testing-utils",
+      "source": "npm:@aamregistry/testing-utils",
       "integrity": "sha256-def456..."
     },
     "git-utils": {

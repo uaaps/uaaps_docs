@@ -74,9 +74,18 @@ The manifest is the **single required file**. It identifies the package and decl
 
   // === PERMISSIONS (optional) ===
   "permissions": {                              // Requested agent capabilities
-    "fs": ["read", "write"],                    // Filesystem access scope
-    "network": ["api.github.com"],              // Allowed network hosts
-    "shell": false                              // Allow arbitrary shell execution
+    "fs": {                                     // Filesystem access — path-scoped
+      "read":  ["src/**", "docs/**"],           //   Glob patterns the package may read
+      "write": ["output/**", ".cache/**"]       //   Glob patterns the package may write/delete
+    },
+    "network": {                                // Network access
+      "hosts": ["api.github.com", "*.npmjs.org"], // Exact host or wildcard subdomain
+      "schemes": ["https"]                      // Allowed URI schemes (https | http | wss)
+    },
+    "shell": {                                  // Shell execution
+      "allow": true,                            //   false = no shell; true = allow listed binaries
+      "binaries": ["git", "npm", "python3"]     //   Explicit allow-list (ignored when allow=false)
+    }
   },
 
   // === QUALITY (optional) ===
@@ -104,7 +113,17 @@ The manifest is the **single required file**. It identifies the package and decl
   "hooks": "./hooks/hooks.json",                // Default: ./hooks/hooks.json
   "mcp": "./mcp/servers.json",                  // Default: ./mcp/servers.json
 
+  // === INSTALL MODE (optional, for adoption transitioning) ===
+  "installMode": {                              // Default: "uaaps" for all platforms
+    "default": "uaaps",                         // "uaaps" | "plugin"
+    "claude-code": "plugin",                    // Per-platform override
+    "cursor": "uaaps"
+  },
+
   // === VENDOR EXTENSIONS (optional) ===
+  // Keys MUST be "x-<vendor-id>" where vendor-id matches [a-z0-9-], max 32 chars.
+  // Values MUST be JSON objects (not scalars or arrays).
+  // Tools MUST silently ignore unrecognised x-* keys.
   "x-claude": {
     "marketplace": "anthropics/skills"
   },
@@ -135,7 +154,7 @@ dependencies:
   code-review: "^1.0.0"
 
 x-claude:
-  marketplace: anthropics/skills
+  marketplace: anthropics/skills   # x-<vendor-id>, value MUST be an object
 
 x-cursor:
   category: Developer Tools
@@ -145,6 +164,29 @@ x-cursor:
 - If both `.json` and `.yaml` exist, **JSON takes precedence**.
 - CLI tools (`aam install`, etc.) generate `package.agent.json` as the canonical output.
 - Lock files (`package.agent.lock`) are always JSON.
+
+### Vendor Extensions
+
+Vendor extensions allow platforms and tools to attach platform-specific metadata to a package manifest without conflicting with the core schema.
+
+#### Naming Rules
+
+- Keys MUST use the prefix `x-<vendor-id>`, where `vendor-id` is a lowercase alphanumeric slug matching `[a-z0-9-]+`, maximum 32 characters (e.g. `x-claude`, `x-cursor`, `x-copilot`).
+- The `vendor-id` SHOULD match either a registered platform identifier from the [compatibility matrix](09-compatibility.md) or the package's own scope identifier (e.g. `x-myorg` for `@myorg/` scoped packages).
+- Extension values MUST be JSON objects. Scalar values (strings, booleans, numbers) and arrays MUST NOT be used as the top-level value of an `x-*` key.
+- Packages SHOULD NOT declare more than **5** `x-*` keys. `aam validate` MUST warn when more than 5 are present (see §16 Validation).
+
+#### Interoperability Rules
+
+- Tools and runtimes MUST silently ignore unrecognised `x-*` keys. Tools MUST NOT error or refuse to install a package solely because of an unknown `x-*` key.
+- Registry indexing: only `x-<known-platform>` keys (those matching a registered platform) are indexed and searchable. Unknown `x-*` keys are stored but not indexed.
+- Registry validation SHOULD produce a `WARN`-level diagnostic for `x-*` keys that do not match any registered platform identifier, to alert the author that the key will not be indexed.
+
+#### Conflict Avoidance
+
+- Two packages MUST NOT declare the same `x-*` key with structurally incompatible schemas. The registry MAY enforce a canonical JSON Schema per registered `x-<vendor>` key.
+- Authors MUST NOT use another vendor's registered `x-*` key to override or shadow that vendor's metadata.
+- Private extensions for in-house tooling SHOULD use the package owner's scope as the vendor-id (e.g. `x-myorg`) to avoid collisions with future registered platforms.
 
 ### Vendor Mapping
 
