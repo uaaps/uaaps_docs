@@ -1,5 +1,5 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://uaaps.github.io/uaaps_docs/schemas/hooks.schema.json",
   "title": "UAAPS Hooks Configuration",
   "description": "Schema for hooks/hooks.json — defines shell commands and LLM prompts triggered at agent lifecycle events.",
@@ -17,23 +17,23 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "pre-tool-use":       { "$ref": "#/definitions/hookGroupArray", "description": "Before tool execution. Supports blocking." },
-        "permission-request": { "$ref": "#/definitions/hookGroupArray", "description": "When a permission dialog is shown. Supports blocking." },
-        "post-tool-use":      { "$ref": "#/definitions/hookGroupArray", "description": "After tool execution. Feedback only." },
-        "pre-prompt":         { "$ref": "#/definitions/hookGroupArray", "description": "Before a user prompt is processed. Supports blocking." },
-        "session-start":      { "$ref": "#/definitions/hookGroupArray", "description": "When a new session begins. Can inject context." },
-        "session-end":        { "$ref": "#/definitions/hookGroupArray", "description": "When a session terminates. Cleanup only." },
-        "stop":               { "$ref": "#/definitions/hookGroupArray", "description": "When the agent finishes responding. Supports blocking." },
-        "sub-agent-end":      { "$ref": "#/definitions/hookGroupArray", "description": "When a sub-agent finishes. Supports blocking." },
-        "pre-compact":        { "$ref": "#/definitions/hookGroupArray", "description": "Before context compaction. Non-blocking." },
-        "notification":       { "$ref": "#/definitions/hookGroupArray", "description": "System notification event. Non-blocking." }
+        "pre-tool-use":       { "$ref": "#/$defs/hookGroupArray", "description": "Before tool execution. Supports blocking." },
+        "permission-request": { "$ref": "#/$defs/hookGroupArray", "description": "When a permission dialog is shown. Supports blocking." },
+        "post-tool-use":      { "$ref": "#/$defs/hookGroupArray", "description": "After tool execution. Feedback only." },
+        "pre-prompt":         { "$ref": "#/$defs/hookGroupArray", "description": "Before a user prompt is processed. Supports blocking." },
+        "session-start":      { "$ref": "#/$defs/hookGroupArray", "description": "When a new session begins. Can inject context." },
+        "session-end":        { "$ref": "#/$defs/hookGroupArray", "description": "When a session terminates. Cleanup only." },
+        "stop":               { "$ref": "#/$defs/hookGroupArray", "description": "When the agent finishes responding. Supports blocking." },
+        "sub-agent-end":      { "$ref": "#/$defs/hookGroupArray", "description": "When a sub-agent finishes. Supports blocking." },
+        "pre-compact":        { "$ref": "#/$defs/hookGroupArray", "description": "Before context compaction. Non-blocking." },
+        "notification":       { "$ref": "#/$defs/hookGroupArray", "description": "System notification event. Non-blocking." }
       }
     }
   },
-  "definitions": {
+  "$defs": {
     "hookGroupArray": {
       "type": "array",
-      "items": { "$ref": "#/definitions/hookGroup" }
+      "items": { "$ref": "#/$defs/hookGroup" }
     },
     "hookGroup": {
       "type": "object",
@@ -47,7 +47,7 @@
         "hooks": {
           "type": "array",
           "minItems": 1,
-          "items": { "$ref": "#/definitions/hookEntry" }
+          "items": { "$ref": "#/$defs/hookEntry" }
         }
       }
     },

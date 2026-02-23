@@ -180,6 +180,19 @@ x-cursor:
 - CLI tools (`aam install`, etc.) generate `package.agent.json` as the canonical output.
 - Lock files (`package.agent.lock`) are always JSON.
 
+**YAML round-trip guarantee**: To ensure lossless JSON-to-YAML conversion, `package.agent.yaml` files MUST conform to the following constraints:
+
+| Constraint | Requirement |
+|-----------|-------------|
+| YAML version | MUST use YAML 1.2 |
+| Scalar types | MUST use only JSON-compatible types: strings, numbers, booleans, null |
+| Anchors & aliases | MUST NOT use YAML anchors (`&`), aliases (`*`), or merge keys (`<<`) |
+| Custom tags | MUST NOT use YAML tags (e.g. `!!python/object`) |
+| Key types | All mapping keys MUST be strings |
+| Duplicate keys | MUST NOT contain duplicate keys in the same mapping |
+
+Tools that convert between JSON and YAML MUST produce output that round-trips without data loss. A manifest that cannot be losslessly converted between formats is non-conformant.
+
 ### Vendor Extensions
 
 Vendor extensions allow platforms and tools to attach platform-specific metadata to a package manifest without conflicting with the core schema.

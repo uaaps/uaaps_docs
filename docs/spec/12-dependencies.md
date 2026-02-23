@@ -72,22 +72,66 @@ After resolution, the solver writes a deterministic **lock file** pinning exact 
 
 ### 13.4 Resolution Algorithm
 
+The resolution algorithm is versioned via the `resolverVersion` field in `package.agent.json` (default: `1`). This allows future changes to resolution semantics without breaking existing packages. Implementations MUST support resolver version 1; higher versions are additive.
+
+Resolution proceeds through five named phases:
+
+**Phase 1: Parse** — Read root `package.agent.json`. If `package.agent.lock` exists and `--frozen` is set, skip to Phase 5 (locked install).
+
+**Phase 2: Build requirement graph** — Collect all `dependencies`, `peerDependencies`, and `optionalDependencies` into an initial requirement DAG. Each edge carries a version constraint.
+
+**Phase 3: Resolve** — For each unresolved requirement, in topological order:
+
+  a. `fetch_versions` — Query the registry (or cache) for all published, non-yanked versions.
+  b. `filter_by_constraint` — Discard versions not matching the constraint.
+  c. `select_version` — Pick the highest compatible version using this priority:
+     1. Locked version (from `package.agent.lock`, if not `--latest`)
+     2. `resolutions` override (from root manifest)
+     3. Highest stable version satisfying the constraint
+     4. Highest pre-release version (only if the constraint explicitly includes a pre-release identifier, e.g. `^1.0.0-beta.1`)
+  d. `resolve_transitive` — Recursively resolve the selected version's own dependencies.
+
+**Phase 4: Validate**
+
+  a. `detect_cycles` — The resolved graph MUST be acyclic. Circular dependencies are a fatal error.
+  b. `check_conflicts` — If two packages require incompatible versions of the same dependency, apply the conflict resolution strategy (see §13.9).
+  c. `check_peers` — Each `peerDependency` MUST be satisfied by the root package or an ancestor in the graph. Unmet peers produce a warning (or error with `--strict-peers`).
+  d. `check_system` — Run system dependency pre-flight checks for all resolved packages.
+
+**Phase 5: Commit**
+
+  a. Write `package.agent.lock` (unless `--frozen`, in which case verify existing lock matches resolved graph exactly).
+  b. Install resolved packages to the install directory (§13.11).
+  c. Hoist shared dependencies where version-compatible (§13.11).
+
+#### Pre-release Version Handling
+
+Pre-release versions (e.g. `1.0.0-beta.1`) follow SemVer 2.0 precedence rules:
+
+| Constraint | Matches `1.0.0-beta.1`? | Matches `1.0.0`? | Rationale |
+|------------|--------------------------|-------------------|-----------|
+| `^1.0.0` | **No** | Yes | Caret ranges exclude pre-releases unless the constraint itself has a pre-release tag |
+| `^1.0.0-beta.0` | **Yes** | Yes | Constraint includes pre-release tag, so pre-releases within the same major.minor.patch are eligible |
+| `>=1.0.0-beta.1` | **Yes** | Yes | Explicit comparison includes the pre-release |
+| `*` | **Yes** | Yes | Wildcard matches everything |
+
+This matches npm's pre-release semantics: a range like `^1.0.0` is understood as requesting stable releases, while `^1.0.0-beta.0` explicitly opts into the pre-release channel.
+
+#### Resolver Version
+
+```jsonc
+// package.agent.json
+{
+  "resolverVersion": 1
+}
 ```
-1. Parse root package.agent.json
-2. Build initial requirement graph from dependencies + peerDependencies
-3. For each unresolved requirement:
-   a. Fetch available versions from source (marketplace, npm, local)
-   b. Filter by version constraint
-   c. Select highest compatible version (prefer stable over pre-release)
-   d. Recursively resolve transitive dependencies
-4. Detect conflicts:
-   a. If two packages require incompatible versions of the same dependency → ERROR
-   b. If peerDependency is unmet by root or any ancestor → WARN (or ERROR if strict)
-5. Flatten dependency tree (hoist where possible, like npm)
-6. Run system dependency pre-flight checks
-7. Write package.agent.lock
-8. Install resolved packages to install directory
-```
+
+| Version | Behavior |
+|---------|----------|
+| `1` (default) | Current algorithm as defined above. |
+| Future versions | Will be defined in subsequent spec revisions. Implementations encountering an unknown resolver version MUST emit an error and refuse to resolve. |
+
+The `resolverVersion` field is OPTIONAL. When absent, version `1` is assumed.
 
 ### 13.5 Resolution Strategies
 
@@ -403,3 +447,47 @@ Implementations MUST NOT mix project-local and global lock files in the same res
 | Available to agent platforms | Only when agent runs in project directory | Always — platform SHOULD scan `~/.aam/packages/` |
 
 Agent platforms SHOULD load globally installed packages as a lower-priority fallback after project-local packages. Project-local packages MUST shadow global packages of the same name.
+
+### 13.14 Workspaces
+
+Workspaces enable monorepo development — multiple UAAPS packages in a single repository sharing a common dependency tree and lock file.
+
+#### Workspace Configuration
+
+Place a `workspace.agent.json` file at the monorepo root. The `packages` array uses glob patterns to locate member packages:
+
+```json
+{
+  "workspace": {
+    "packages": ["packages/*", "internal/*"]
+  }
+}
+```
+
+Each glob pattern MUST resolve to directories containing a valid `package.agent.json`.
+
+#### Workspace Rules
+
+| Rule | Requirement |
+|------|-------------|
+| `workspace.agent.json` MUST be at the repository root | MUST |
+| Each glob pattern MUST resolve to directories containing `package.agent.json` | MUST |
+| All workspace members share a single `package.agent.lock` at the root | MUST |
+| Inter-workspace dependencies are resolved from the local filesystem (no registry fetch) | MUST |
+| Workspace members MAY have different versions | MAY |
+| `aam install` at the root installs dependencies for ALL members | MUST |
+| `aam install` within a member directory installs only that member's dependencies | SHOULD |
+
+#### CLI Commands
+
+```bash
+aam install                        # Install all workspace members
+aam install --workspace packages/my-pkg  # Install specific member
+aam test --workspace               # Run tests across all members
+aam publish --workspace            # Publish all changed members
+aam workspace list                 # List all workspace members
+```
+
+#### Lock File Behavior
+
+The workspace shares a single `package.agent.lock` at the root. All members' dependencies are resolved together, ensuring version consistency across the monorepo. The lock file includes a `workspaceMembers` field listing each member and its resolved dependencies.

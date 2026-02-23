@@ -28,3 +28,14 @@
 | **Bundle** | A pre-compiled, platform-specific archive requiring no install-time resolution. |
 | **Dist-tag** | A named alias for a specific package version (e.g., `stable`, `bank-approved`). |
 | **Policy Gate** | A client-side governance rule enforced before install or publish operations. |
+| **Yank** | Soft-delete of a published version. Yanked versions are hidden from search and new resolution but remain downloadable for existing lock files. See §12.7. |
+| **Deprecation** | Advisory state marking a version as superseded. Deprecated versions remain fully functional but emit warnings. See §12.7. |
+| **Provenance** | Cryptographic attestation linking a package archive to its source repository, commit, and build system. See §14.5. |
+| **Conformance Level** | A tiered compliance claim (Level 1–3) indicating which UAAPS features a platform implements. See §1. |
+| **Workspace** | A monorepo configuration where multiple UAAPS packages share a single dependency tree and lock file. See §13.14. |
+| **Capability Negotiation** | Runtime mechanism for packages to discover what features the host platform supports. See §10. |
+| **Resolver Version** | A manifest field (`resolverVersion`) that selects which dependency resolution algorithm to apply. See §13.4. |
+| **Permission Grant** | An explicit escalation allowing a dependency to use capabilities beyond the root package's permission boundary. See §17.3. |
+| **Threat Model** | A structured analysis of threat actors, attack surfaces, and mitigations for the UAAPS ecosystem. See §17.2. |
+| **ABNF** | Augmented Backus-Naur Form (RFC 5234) — formal grammar notation used to define UAAPS syntax. See §1. |
+| **SLSA** | Supply-chain Levels for Software Artifacts — a framework for graduated provenance requirements. See §14.5. |

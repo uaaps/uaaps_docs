@@ -1,5 +1,5 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://uaaps.github.io/uaaps_docs/schemas/command-frontmatter.schema.json",
   "title": "UAAPS Command Frontmatter",
   "description": "Schema for the YAML frontmatter block in commands/<name>.md files. Commands are user-invoked via /command-name and can also serve as reusable parameterized templates with {{variable}} interpolation.",
@@ -20,10 +20,10 @@
     "variables": {
       "description": "Template variables available via {{variable_name}} interpolation in the command body.",
       "type": "array",
-      "items": { "$ref": "#/definitions/variable" }
+      "items": { "$ref": "#/$defs/variable" }
     }
   },
-  "definitions": {
+  "$defs": {
     "variable": {
       "type": "object",
       "required": ["name"],

@@ -1,5 +1,5 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://uaaps.github.io/uaaps_docs/schemas/package-manifest.schema.json",
   "title": "UAAPS Package Manifest",
   "description": "Schema for package.agent.json (and package.agent.yaml) — the single required file in every UAAPS package.",
@@ -75,33 +75,33 @@
       "properties": {
         "skills": {
           "type": "array",
-          "items": { "$ref": "#/definitions/artifactEntry" }
+          "items": { "$ref": "#/$defs/artifactEntry" }
         },
         "agents": {
           "type": "array",
-          "items": { "$ref": "#/definitions/artifactEntry" }
+          "items": { "$ref": "#/$defs/artifactEntry" }
         },
         "commands": {
           "type": "array",
-          "items": { "$ref": "#/definitions/artifactEntry" }
+          "items": { "$ref": "#/$defs/artifactEntry" }
         }
       }
     },
     "dependencies": {
       "description": "Other UAAPS packages required. Keys are package names, values are SemVer ranges.",
-      "$ref": "#/definitions/dependencyMap"
+      "$ref": "#/$defs/dependencyMap"
     },
     "optionalDependencies": {
       "description": "Optional packages — install succeeds even if these are absent.",
-      "$ref": "#/definitions/dependencyMap"
+      "$ref": "#/$defs/dependencyMap"
     },
     "peerDependencies": {
       "description": "Packages that must be provided by the host environment. Not auto-installed.",
-      "$ref": "#/definitions/dependencyMap"
+      "$ref": "#/$defs/dependencyMap"
     },
     "resolutions": {
       "description": "Force specific versions for transitive dependencies to resolve conflicts.",
-      "$ref": "#/definitions/dependencyMap"
+      "$ref": "#/$defs/dependencyMap"
     },
     "systemDependencies": {
       "description": "OS-level and runtime requirements. Verified via pre-flight checks; not auto-installed (except pip/npm with --install-system-deps).",
@@ -155,23 +155,112 @@
       }
     },
     "permissions": {
-      "description": "Declared capability scopes. Host platforms should enforce these.",
+      "description": "Declared capability scopes. When present, platforms MUST enforce these at runtime. See §17.1.",
       "type": "object",
       "additionalProperties": false,
       "properties": {
         "fs": {
           "description": "Filesystem access scopes.",
-          "type": "array",
-          "items": { "type": "string", "enum": ["read", "write"] }
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "read": {
+              "description": "Glob patterns the package MAY read. Paths are relative to the project root.",
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "write": {
+              "description": "Glob patterns the package MAY write or delete. A write grant does not imply read.",
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
         },
         "network": {
-          "description": "Allowed network hosts (exact host or glob pattern).",
-          "type": "array",
-          "items": { "type": "string" }
+          "description": "Network access scopes. Omitting network entirely means no network access is permitted.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "hosts": {
+              "description": "Allowed hostnames (exact or single-level wildcard like '*.example.com'). IP literals and CIDR ranges are not supported.",
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "schemes": {
+              "description": "Allowed URI schemes. Permitted values: https, http, wss, ws. Defaults to ['https'] if omitted.",
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": ["https", "http", "wss", "ws"]
+              }
+            }
+          }
         },
         "shell": {
-          "description": "Whether arbitrary shell execution is allowed.",
-          "type": "boolean"
+          "description": "Shell execution scopes.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "allow": {
+              "description": "Whether shell execution is permitted. false (or omitting shell) prohibits all shell execution.",
+              "type": "boolean"
+            },
+            "binaries": {
+              "description": "When present, only listed executable names MAY be invoked. Matched against the basename of the resolved executable.",
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "permissionGrants": {
+      "description": "Explicit permission escalations for specific dependencies. Keys MUST be package names from dependencies. See §17.3.",
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/permissionsObject"
+      }
+    },
+    "resolverVersion": {
+      "description": "Dependency resolution algorithm version. Must be a positive integer. Unknown versions are a fatal error. See §13.4.",
+      "type": "integer",
+      "minimum": 1,
+      "default": 1
+    },
+    "installMode": {
+      "description": "Installation mode. A string for uniform mode, or an object with 'default' and per-platform overrides. See §12.1.",
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": ["project", "global"]
+        },
+        {
+          "type": "object",
+          "required": ["default"],
+          "additionalProperties": false,
+          "properties": {
+            "default":    { "type": "string", "enum": ["project", "global"] },
+            "claude-code": { "type": "string", "enum": ["project", "global"] },
+            "cursor":      { "type": "string", "enum": ["project", "global"] },
+            "copilot":     { "type": "string", "enum": ["project", "global"] },
+            "codex":       { "type": "string", "enum": ["project", "global"] }
+          }
+        }
+      ]
+    },
+    "deprecated": {
+      "description": "When present, marks this version as deprecated. The message field is REQUIRED.",
+      "type": "object",
+      "required": ["message"],
+      "additionalProperties": false,
+      "properties": {
+        "message": {
+          "description": "Human-readable deprecation notice. Should include migration guidance.",
+          "type": "string"
+        },
+        "successor": {
+          "description": "Suggested replacement package name or version range.",
+          "type": "string"
         }
       }
     },
@@ -227,7 +316,7 @@
     "mcp":      { "description": "Override path to MCP servers.json.", "type": "string" },
     "dist-tags": {
       "description": "Named aliases for specific package versions (e.g. 'stable', 'bank-approved').",
-      "$ref": "#/definitions/dependencyMap"
+      "$ref": "#/$defs/dependencyMap"
     },
     "x-claude": {
       "description": "Claude Code vendor extension fields.",
@@ -238,7 +327,7 @@
       "type": "object"
     }
   },
-  "definitions": {
+  "$defs": {
     "artifactEntry": {
       "type": "object",
       "required": ["name", "path"],
@@ -252,6 +341,37 @@
     "dependencyMap": {
       "type": "object",
       "additionalProperties": { "type": "string" }
+    },
+    "permissionsObject": {
+      "description": "A permissions object matching the structure of the top-level permissions field.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "fs": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "read":  { "type": "array", "items": { "type": "string" } },
+            "write": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        "network": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "hosts":   { "type": "array", "items": { "type": "string" } },
+            "schemes": { "type": "array", "items": { "type": "string", "enum": ["https", "http", "wss", "ws"] } }
+          }
+        },
+        "shell": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "allow":    { "type": "boolean" },
+            "binaries": { "type": "array", "items": { "type": "string" } }
+          }
+        }
+      }
     }
   }
 }

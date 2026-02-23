@@ -356,3 +356,141 @@ All error responses MUST use `application/json` with this structure:
 | `503` | Registry temporarily unavailable |
 
 > Full pagination headers, rate-limit headers, conditional request support (`ETag`, `If-None-Match`), and approval workflow request/response bodies will be defined in the Registry Protocol document.
+
+#### Structured Error Code Constants
+
+Registries MUST use the following machine-readable error codes in the `error.code` field of error responses. Clients SHOULD use these codes for programmatic error handling rather than relying on HTTP status codes alone.
+
+| Code | HTTP Status | Description |
+|------|-------------|-------------|
+| `PACKAGE_NOT_FOUND` | `404` | Package name does not exist |
+| `VERSION_NOT_FOUND` | `404` | Specific version does not exist |
+| `VERSION_CONFLICT` | `409` | Version already published |
+| `MANIFEST_INVALID` | `422` | Manifest failed schema validation |
+| `SIGNATURE_INVALID` | `403` | Package signature verification failed |
+| `TAG_NOT_FOUND` | `404` | Dist-tag does not exist |
+| `UNAUTHORIZED` | `401` | Authentication required |
+| `FORBIDDEN` | `403` | Insufficient permissions |
+| `RATE_LIMITED` | `429` | Rate limit exceeded |
+| `REGISTRY_UNAVAILABLE` | `503` | Registry temporarily unavailable |
+| `PACKAGE_YANKED` | `410` | Version is yanked (not available for new resolution) |
+| `PACKAGE_DEPRECATED` | `200` | Version is deprecated (returned alongside valid response) |
+
+#### Content Negotiation
+
+Clients SHOULD send an `Accept` header specifying the versioned media type:
+
+```
+Accept: application/vnd.uaaps.v1+json
+```
+
+Registries MUST also accept `application/json` as a fallback for clients that do not specify the versioned type. The response `Content-Type` MUST match the negotiated media type. If the client requests a media type the registry does not support, the registry MUST respond with `406 Not Acceptable`.
+
+#### Pagination
+
+List endpoints (e.g., `GET /packages`, `GET /approvals`) MUST support cursor-based pagination.
+
+**Query parameters:**
+
+| Parameter | Default | Max | Description |
+|-----------|---------|-----|-------------|
+| `cursor` | _(none)_ | — | Opaque token returned by the previous response |
+| `limit` | `50` | `200` | Maximum number of items per page |
+
+**Response headers:**
+
+| Header | Description |
+|--------|-------------|
+| `Link: <url>; rel="next"` | URL for the next page of results |
+| `X-Total-Count` | Total number of items matching the query |
+
+When no more results exist, the registry MUST omit the `Link` header with `rel="next"`. Clients MUST NOT assume a stable ordering across pages unless a `sort` parameter is provided.
+
+#### Additional Endpoints
+
+The following endpoints extend the base endpoint index (§12.6) with search, deprecation, and yank operations.
+
+| Method | Path | Purpose | Auth required |
+|--------|------|---------|--------------|
+| `GET` | `/packages?q=<query>&category=<cat>&sort=<field>` | Search packages | No (public) / Yes (private) |
+| `POST` | `/packages/:name/:version/deprecate` | Deprecate a version | Yes |
+| `DELETE` | `/packages/:name/:version/deprecate` | Remove deprecation | Yes |
+| `POST` | `/packages/:name/:version/yank` | Yank a version | Yes |
+| `DELETE` | `/packages/:name/:version/yank` | Undo yank | Yes |
+
+The `POST /packages/:name/:version/deprecate` endpoint accepts a JSON body:
+
+```json
+{
+  "message": "Use @myorg/agent@2.0.0 instead",
+  "replacement": "@myorg/agent@^2.0.0"
+}
+```
+
+The `replacement` field is OPTIONAL and, when provided, MUST be a valid package specifier. The `message` field is REQUIRED and MUST NOT exceed 280 characters.
+
+---
+
+### 12.7 Package Lifecycle
+
+Published packages transition through a defined set of states that control visibility and resolution behavior. UAAPS follows an **immutability-first** model: once an archive is published, it is permanent.
+
+#### State Machine
+
+```
+                 deprecate                    yank
+  ┌───────────┐ ──────────► ┌──────────────┐
+  │ Published │              │  Deprecated  │
+  └─────┬─────┘ ◄────────── └──────────────┘
+        │        undeprecate
+        │
+        │  yank               undo yank
+        ├──────────────────► ┌──────────────┐
+        │                    │    Yanked     │
+        │ ◄──────────────── └──────────────┘
+```
+
+- **Published → Deprecated:** The `deprecate` command marks a version as deprecated. Deprecated versions remain fully functional but emit warnings during resolution.
+- **Published → Yanked:** The `yank` command soft-deletes a version. Yanked versions are hidden from search and new resolution but remain downloadable for existing lock files.
+- There is **no hard unpublish**. Once published, the archive is permanent.
+
+#### Behavior by State
+
+| State | Appears in search | Resolved by `aam install`? | Resolved by `--frozen`? | Downloadable? |
+|-------|-------------------|---------------------------|------------------------|---------------|
+| **Published** | Yes | Yes | Yes | Yes |
+| **Deprecated** | Yes (with warning) | Yes (with warning + replacement message) | Yes | Yes |
+| **Yanked** | No | No | Yes (lock file integrity preserved) | Yes (if in lock file) |
+
+#### CLI Commands
+
+```bash
+# Deprecate a version with a message
+aam deprecate @myorg/agent@1.0.0 "Use @myorg/agent@2.0.0 instead"
+
+# Yank a version (soft-delete)
+aam yank @myorg/agent@1.0.0
+
+# Reverse a yank
+aam yank --undo @myorg/agent@1.0.0
+```
+
+#### Manifest Metadata for Deprecation
+
+Publishers MAY declare deprecation metadata directly in `package.agent.json`. When present, the registry SHOULD surface this information in search results and install warnings.
+
+```jsonc
+// package.agent.json
+{
+  "deprecated": {
+    "message": "Use @myorg/agent@2.0.0 instead",
+    "replacement": "@myorg/agent@^2.0.0"
+  }
+}
+```
+
+The `message` field is REQUIRED when `deprecated` is present. The `replacement` field is OPTIONAL and MUST be a valid package specifier when provided.
+
+#### Immutability Guarantee
+
+> Unlike npm's `unpublish`, UAAPS follows Cargo's immutability model: published archives are permanent. This guarantees that existing lock files always resolve successfully, preventing supply-chain breakage.

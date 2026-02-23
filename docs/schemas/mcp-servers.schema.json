@@ -1,5 +1,5 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://uaaps.github.io/uaaps_docs/schemas/mcp-servers.schema.json",
   "title": "UAAPS MCP Servers Configuration",
   "description": "Schema for mcp/servers.json — declares Model Context Protocol servers that extend agent capabilities.",
@@ -12,20 +12,20 @@
       "type": "object",
       "minProperties": 1,
       "additionalProperties": {
-        "$ref": "#/definitions/serverEntry"
+        "$ref": "#/$defs/serverEntry"
       }
     },
     "inputs": {
       "description": "Input variable definitions for sensitive values (API keys, tokens, etc.). Referenced in server config as '${input:id}'.",
       "type": "array",
-      "items": { "$ref": "#/definitions/inputEntry" }
+      "items": { "$ref": "#/$defs/inputEntry" }
     }
   },
-  "definitions": {
+  "$defs": {
     "serverEntry": {
       "oneOf": [
-        { "$ref": "#/definitions/stdioServer" },
-        { "$ref": "#/definitions/httpServer" }
+        { "$ref": "#/$defs/stdioServer" },
+        { "$ref": "#/$defs/httpServer" }
       ]
     },
     "stdioServer": {

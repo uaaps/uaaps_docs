@@ -109,3 +109,128 @@ $ aam install @myorg/data-exporter
 ```
 
 The `aam validate --permissions` flag runs the audit in isolation without a full package validation pass.
+
+---
+
+### 17.2 Threat Model
+
+This section identifies the primary threat actors, attack surfaces, and mitigations relevant to the UAAPS ecosystem. Implementations SHOULD use this model to guide security decisions.
+
+#### Threat Actors
+
+| Actor | Capability | Motivation |
+|-------|-----------|------------|
+| **Malicious package author** | Publishes a package with harmful skills, hooks, or scripts | Data exfiltration, credential theft, resource hijacking |
+| **Compromised registry** | Serves tampered archives or metadata | Supply-chain poisoning at scale |
+| **Dependency confusion attacker** | Publishes a public package with the same name as a private one | Hijack installs that resolve against the public registry |
+| **Man-in-the-middle** | Intercepts registry traffic | Serve tampered archives, steal auth tokens |
+| **Compromised maintainer** | Publishes a malicious update to an existing trusted package | Supply-chain attack via trusted channel |
+| **Typosquatter** | Publishes packages with names similar to popular ones | Trick users into installing malicious packages |
+
+#### Attack Surfaces
+
+| Surface | Vector | Relevant Artifacts |
+|---------|--------|-------------------|
+| **Skill scripts** | Execute arbitrary code during skill activation (`scripts/`) | Skills |
+| **Hook commands** | Execute shell commands at lifecycle events with user privileges | Hooks |
+| **MCP servers** | Launch external processes with network and filesystem access | MCP configs |
+| **Shell binaries** | Invoke system executables with attacker-controlled arguments | Skills, hooks |
+| **Network access** | Exfiltrate data or download additional payloads | Skills, MCP servers |
+| **Filesystem write** | Overwrite project files, inject malicious code, plant backdoors | Skills, hooks |
+| **Environment variables** | Leak secrets declared in `env` to untrusted code | All artifacts |
+| **Transitive dependencies** | Inject malicious code via a deeply-nested dependency | Dependencies |
+| **Lock file manipulation** | Modify `package.agent.lock` to point to tampered archives | Lock file |
+
+#### Mitigations Mapped to Spec Mechanisms
+
+| Threat | Mitigation | Spec Mechanism |
+|--------|-----------|----------------|
+| Malicious package author | Permissions restrict what a package can do | §17.1 Permissions Model |
+| Malicious package author | Code review before install | `aam validate`, `aam audit` |
+| Compromised registry | Checksum verification on every install | §14.4 Lock File Integrity |
+| Compromised registry | Signature verification (Sigstore/GPG) | §14.1–§14.3 Signing |
+| Compromised registry | Provenance attestation (SLSA L2+) | §14.5 Provenance |
+| Dependency confusion | Scoped package names (`@org/name`) | §12.2 Scoped Names |
+| Dependency confusion | Policy gates restrict allowed scopes | §15.1 Policy Gates |
+| MITM | HTTPS-only registry transport | §12.6 HTTP Registry Protocol |
+| MITM | Lock file integrity hashes | §14.4 Lock File Integrity |
+| Compromised maintainer | Yank + deprecation (but no unpublish) | §12.7 Package Lifecycle |
+| Compromised maintainer | Approval workflows before publish | §15.2 Approval Workflows |
+| Typosquatting | Registry-side name similarity checks | Registry implementation (out of scope) |
+| Transitive dependencies | `aam tree` exposes full graph; `aam audit` checks vulnerabilities | §13.10 Dependency Commands |
+| Lock file manipulation | `--frozen` verifies hashes against locked values | §14.4 Lock File Integrity |
+| Env variable leakage | Explicit `env` declarations with required/optional flags | §3 Manifest `env` field |
+
+#### Residual Risks
+
+The following risks are **not fully mitigated** by this specification. Implementations and users SHOULD apply additional controls:
+
+| Risk | Why It Persists | Recommended Mitigation |
+|------|----------------|----------------------|
+| **Zero-day in trusted package** | No mechanism prevents a trusted author from introducing a subtle vulnerability | Automated security scanning, eval regression testing |
+| **Permission escalation via shell** | `shell.binaries: ["git"]` permits `git` subcommands that may invoke arbitrary executables (e.g. `--upload-pack`) | Platforms SHOULD sanitize arguments to allowed binaries |
+| **MCP server compromise** | MCP servers run as external processes with broad access | Platforms SHOULD sandbox MCP servers with minimal permissions |
+| **Social engineering** | Users may approve dangerous permission prompts without reading | UX design: require explicit confirmation for `shell.allow: true` and broad `fs.write` |
+| **Registry account takeover** | Not addressed by this spec | Registry implementations SHOULD enforce MFA and session timeouts |
+
+---
+
+### 17.3 Transitive Permission Composition
+
+When a package depends on other packages, each with their own `permissions` declarations, the effective permission set must be determined. UAAPS uses a **root-governs** model.
+
+#### Composition Rules
+
+| Rule | Description |
+|------|-------------|
+| **Root authority** | The root package's `permissions` field (the package installed directly by the user) is the maximum permission boundary. No dependency can exceed it. |
+| **Dependency permissions** | Each dependency's `permissions` are checked against the root's permissions. If a dependency requests a capability not granted by the root, the platform MUST deny it at runtime. |
+| **Absent permissions** | If the root package omits `permissions`, platform defaults apply to the entire dependency tree. If a dependency declares `permissions` but the root does not, the dependency's permissions are advisory only. |
+| **Union within root boundary** | The effective permission set is the union of all dependencies' declared permissions, intersected with the root's permission boundary. |
+
+#### Permission Escalation via `permissionGrants`
+
+If a root package needs to explicitly grant broader permissions to a specific dependency (e.g., a dependency needs `shell` access but the root normally restricts it), the root MUST declare this in a `permissionGrants` field:
+
+```jsonc
+// Root package's package.agent.json
+{
+  "permissions": {
+    "fs": { "read": ["src/**"], "write": ["output/**"] },
+    "shell": { "allow": false }
+  },
+  "permissionGrants": {
+    "code-formatter": {
+      "shell": { "allow": true, "binaries": ["prettier"] }
+    }
+  }
+}
+```
+
+| Rule | Requirement |
+|------|-------------|
+| `permissionGrants` keys MUST be package names from `dependencies` | MUST |
+| Granted permissions MUST NOT exceed what the root could declare for itself | MUST |
+| `aam validate` MUST warn when `permissionGrants` grants `shell.allow: true` without a `binaries` list | MUST |
+| `aam install` MUST display permission grants to the user for review | MUST |
+| If a dependency requires permissions not granted by root or `permissionGrants`, installation SHOULD warn | SHOULD |
+
+#### Effective Permission Calculation
+
+```
+effective(dep) = declared(dep) ∩ (declared(root) ∪ permissionGrants(dep))
+```
+
+Where `∩` is the intersection (least-privilege) and `∪` is the union of explicit grants. If `declared(dep)` is absent, the dependency inherits the root's permissions boundary.
+
+#### Example
+
+```
+Root declares:     fs.read=["src/**"], fs.write=["output/**"], shell.allow=false
+Dependency A:      fs.read=["**"], shell.allow=true, binaries=["prettier"]
+permissionGrants:  { "A": { shell: { allow: true, binaries: ["prettier"] } } }
+
+Effective for A:   fs.read=["src/**"], fs.write=["output/**"],
+                   shell.allow=true, binaries=["prettier"]
+                   (fs.read narrowed to root's boundary; shell granted explicitly)
+```

@@ -35,7 +35,7 @@ UAAPS is the open standard for packaging AI agent artifacts — analogous to Doc
 
 ## Current Version
 
-**0.5.0-draft** — See the [Changelog](changelog.md) for version history.
+**0.6.0-draft** — See the [Changelog](changelog.md) for version history.
 
 ---
 

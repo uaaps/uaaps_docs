@@ -1,6 +1,8 @@
 # UAAPS Schemas
 
-JSON Schema (Draft-07) files for programmatic validation of all UAAPS-defined structured files.
+JSON Schema ([2020-12](https://json-schema.org/draft/2020-12/json-schema-core)) files for programmatic validation of all UAAPS-defined structured files.
+
+> **Important**: The prose specification is authoritative. These JSON Schema files are **informational aids** for validation. In case of conflict between a schema and the prose spec, the prose governs.
 
 ## Files That Require a Schema
 
@@ -22,7 +24,7 @@ JSON Schema (Draft-07) files for programmatic validation of all UAAPS-defined st
 
 ### CLI validation (ajv)
 ```bash
-npx ajv validate -s docs/schemas/package-manifest.schema.json -d package.agent.json
+npx ajv validate -s docs/schemas/package-manifest.schema.json -d package.agent.json --spec=draft2020
 ```
 
 ### Python (jsonschema)

@@ -17,6 +17,14 @@
 | Lock file integrity | Hash MUST match on `--frozen` install |
 | Namespace uniqueness | No two skills with same `name` within a single package |
 | Resolution overrides | `resolutions` entries MUST reference packages in the tree |
+| Resolver version | `resolverVersion` MUST be a positive integer. Unknown versions are a fatal error. |
+| YAML round-trip | `package.agent.yaml` MUST use YAML 1.2 with JSON-compatible types only (no anchors, aliases, tags, or merge keys) |
+| Workspace config | `workspace.agent.json` `packages` globs MUST resolve to directories containing `package.agent.json` |
+| Forward-compatibility | Tools MUST NOT reject manifests containing unrecognized fields (see §1 Forward-Compatibility Parsing Rules) |
+| Permission grants | `permissionGrants` keys MUST reference packages listed in `dependencies` |
+| Provenance level | `require_provenance` in config MUST be one of: `L0`, `L1`, `L2`, `L3` |
+| Deprecated field | When `deprecated` is present, `deprecated.message` is REQUIRED |
+| Conformance claim | Platforms claiming a conformance level MUST implement ALL requirements of that level |
 
 ### Permissions Security Audit
 

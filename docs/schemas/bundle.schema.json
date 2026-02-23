@@ -1,5 +1,5 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://uaaps.github.io/uaaps_docs/schemas/bundle.schema.json",
   "title": "UAAPS Portable Bundle Manifest",
   "description": "Schema for bundle.json — the internal manifest inside a .bundle.aam portable bundle archive. Describes the pre-compiled platform-specific artifacts.",
