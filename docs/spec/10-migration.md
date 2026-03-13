@@ -61,7 +61,7 @@ The formats are functionally identical. Only the file extension changes.
 
 ---
 
-## 11.1 Install Mode — Smooth Adoption Before Full Vendor Implementation
+### 11.1 Install Mode — Smooth Adoption Before Full Vendor Implementation
 
 The `installMode` field in `package.agent.json` allows a package author to declare how the package SHOULD be deployed on platforms that have not yet natively implemented the UAAPS standard. This enables smooth adoption: one package can target both UAAPS-native environments and platforms still using their own plugin system.
 
@@ -131,7 +131,7 @@ Once a platform vendor implements UAAPS natively, `"plugin"` mode for that platf
 
 Package authors SHOULD remove per-platform `plugin` overrides once the target platform is listed as UAAPS-native in the compatibility matrix (§10).
 
-## 11.2 Future Build Target — UAAPS Package → Codex Native Structure
+### 11.2 Future Build Target — UAAPS Package → Codex Native Structure
 
 This section defines the intended conversion model for a future toolchain that exports a UAAPS package into a Codex-native repository layout.
 

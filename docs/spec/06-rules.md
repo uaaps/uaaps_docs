@@ -371,7 +371,7 @@ Two routing rules applied in order:
 `CLAUDE.md` is managed with a **block-replace strategy**. The compiler owns only the content between guard markers and leaves everything outside them untouched:
 
 ```markdown
-<!-- aam:begin — managed by aam rules compile; do not edit this block manually -->
+<!-- aam:begin — managed by aam pkg rules compile; do not edit this block manually -->
 
 ## Always-on Rules
 
@@ -427,7 +427,7 @@ With `--force`, the compiler overwrites the file unconditionally and deletes any
 
 #### Idempotency
 
-Running `aam rules compile` twice with no source changes MUST produce bit-identical output files:
+Running `aam pkg rules compile` twice with no source changes MUST produce bit-identical output files:
 
 - Rule ordering within a merged file is always alphabetical by `name`.
 - The compiler MUST NOT embed build timestamps or volatile metadata in generated file content.

@@ -300,7 +300,7 @@ The `files` field controls which paths are included when building a `.aam` archi
 - `files` entries MUST be relative paths using forward slashes.
 - `files` entries MUST NOT resolve outside the package root.
 - `files` entries MUST NOT use negated patterns (`!foo/**`).
-- `aam pack` MUST fail if the computed packlist excludes a file referenced by the manifest or by a declared artifact.
+- `aam pkg pack` MUST fail if the computed packlist excludes a file referenced by the manifest or by a declared artifact.
 - If `files` is omitted, tools MUST use the default inclusion algorithm defined in §12.1.
 
 ### Dependency Groups

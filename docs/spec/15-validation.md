@@ -17,7 +17,7 @@
 | Lock file integrity | Hash MUST match on `--frozen` install |
 | Lock file source metadata | `package.agent.lock` version `2` entries MUST store `source` as an object with required fields for the selected source `type` |
 | Manifest `files` | Entries MUST be relative, use forward slashes, and MUST NOT use negated patterns |
-| Archive completeness | `aam pack` MUST fail if the computed packlist omits a referenced artifact, hook, or MCP file |
+| Archive completeness | `aam pkg pack` MUST fail if the computed packlist omits a referenced artifact, hook, or MCP file |
 | Dependency groups | `dependencyGroups` keys MUST match `[a-z0-9][a-z0-9-]*` and each group MUST declare at least one of `dependencies` or `systemDependencies` |
 | Extras | `extras` keys MUST match `[a-z0-9][a-z0-9-]*` and each extra MUST declare at least one of `dependencies`, `systemDependencies`, `artifacts`, or `permissions` |
 | Extra artifact refs | `extras.*.artifacts` entries MUST resolve to names declared in the top-level `artifacts` registry |

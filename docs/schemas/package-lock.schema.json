@@ -8,7 +8,7 @@
   "additionalProperties": false,
   "properties": {
     "lockVersion": {
-      "description": "Lock file format version. Current version is 2. Tools SHOULD continue reading version 1 for backward compatibility.",
+      "description": "Lock file format version. Current version is 2. This schema validates v2 lock files only. Tools SHOULD continue reading version 1 for backward compatibility, but v1 files will not validate against this schema.",
       "type": "integer",
       "const": 2
     },

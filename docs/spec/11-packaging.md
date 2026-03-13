@@ -72,7 +72,7 @@ The archive packlist MUST be deterministic.
 **Packlist rules:**
 - Archive entries MUST use forward-slash paths relative to the package root.
 - Archive entries MUST be sorted lexicographically by path before tar creation.
-- `aam pack` MUST fail if the final packlist omits a file referenced by the manifest, a declared artifact entry, or a configured hook/MCP path.
+- `aam pkg pack` MUST fail if the final packlist omits a file referenced by the manifest, a declared artifact entry, or a configured hook/MCP path.
 - Tools SHOULD warn when the packlist includes likely-secret files such as `.env`, `.env.*`, or credential exports.
 
 #### Reproducible Archive Build
